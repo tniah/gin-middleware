@@ -15,7 +15,7 @@ type LoggerConfig struct {
 	SkipPaths []string
 
 	// LogValuesFunc defines a function that is called with values extracted by logger.
-	LogValuesFunc func(c *gin.Context, v RequestLoggerParams) error
+	LogValuesFunc func(c *gin.Context, v RequestLoggerParams)
 
 	// LogLatency instructs logger to record how much time the server cost to process a certain request.
 	LogLatency bool
