@@ -71,6 +71,7 @@ type RequestLoggerParams struct {
 	ResponseSize  int
 	Headers       map[string][]string
 	QueryParams   map[string][]string
+	Keys          map[string]any
 }
 
 func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
@@ -168,6 +169,8 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 				}
 			}
 		}
+
+		params.Keys = c.Keys
 
 		if cfg.LogLatency {
 			params.Latency = time.Since(startTime)
