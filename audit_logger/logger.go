@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	HeaderContentLength = "Content-Length"
+)
+
 type Skipper func(c *gin.Context) bool
 
 type LoggerConfig struct {
@@ -33,8 +37,11 @@ type LoggerConfig struct {
 	LogURI bool
 	// LogURIPath instructs logger to extract request URI path (i.e. `/api/v1/users`)
 	LogURIPath bool
-	// LogRequestID instructs logger to extract request ID from request `X-Request-ID` header.
-	LogRequestID bool
+	// LogRoutePath bool instructs logger to extract route path part to which request was matched
+	// (i.e. `/api/v1/clients/:clientID`)
+	LogRoutePath bool
+	// LogRequestID instructs logger to extract request ID from one of the given parameters.
+	LogRequestIdParams []string
 	// LogReferer instructs logger to extract request referer values.
 	LogReferer bool
 	// LogUserAgent instructs logger to extract request user agent value.
@@ -62,6 +69,7 @@ type RequestLoggerParams struct {
 	Method        string
 	URI           string
 	URIPath       string
+	RoutePath     string
 	RequestID     string
 	Referer       string
 	UserAgent     string
@@ -94,6 +102,7 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 	}
 
 	logQueryParams := len(cfg.LogQueryParams) > 0
+	logRequestID := len(cfg.LogRequestIdParams) > 0
 
 	return func(c *gin.Context) {
 		// Start timer
@@ -132,6 +141,25 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 			params.URIPath = c.Request.URL.Path
 		}
 
+		if cfg.LogRoutePath {
+			params.RoutePath = c.FullPath()
+		}
+
+		if logRequestID {
+			var reqID string
+			for _, param := range cfg.LogRequestIdParams {
+				reqID = c.GetHeader(param)
+				if reqID == "" {
+					reqID = c.Writer.Header().Get(param)
+				}
+
+				if reqID != "" {
+					break
+				}
+			}
+			params.RequestID = reqID
+		}
+
 		if cfg.LogReferer {
 			params.Referer = c.Request.Referer()
 		}
@@ -146,6 +174,10 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 
 		if cfg.LogError {
 			params.Error = c.Errors.ByType(gin.ErrorTypePrivate).String()
+		}
+
+		if cfg.LogContentLength {
+			params.ContentLength = c.Request.Header.Get(HeaderContentLength)
 		}
 
 		if cfg.LogResponseSize {
@@ -164,13 +196,11 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 		if logQueryParams {
 			params.QueryParams = map[string][]string{}
 			for _, param := range cfg.LogQueryParams {
-				if values, ok := c.Request.URL.Query()[param]; ok {
+				if values, ok := c.GetQueryArray(param); ok {
 					params.QueryParams[param] = values
 				}
 			}
 		}
-
-		params.Keys = c.Keys
 
 		if cfg.LogLatency {
 			params.Latency = time.Since(startTime)
