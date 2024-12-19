@@ -8,7 +8,14 @@ import (
 )
 
 const (
-	HeaderContentLength = "Content-Length"
+	HeaderContentLength   = "Content-Length"
+	HeaderContentEncoding = "Content-Encoding"
+	HeaderContentType     = "Content-Type"
+	HeaderXRequestID      = "X-Request-Id"
+	HeaderAuthorization   = "Authorization"
+	HeaderWWWAuthenticate = "WWW-Authenticate"
+	HeaderXForwardedFor   = "X-Forwarded-For"
+	HeaderCookie          = "Cookie"
 )
 
 type Skipper func(c *gin.Context) bool
