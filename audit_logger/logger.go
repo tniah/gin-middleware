@@ -33,12 +33,12 @@ type LoggerConfig struct {
 	LogHost bool
 	// LogMethod instructs logger to extract
 	LogMethod bool
-	// LogURI instructs logger to extract request URI (i.e. `/api/v1/users?name=kai`
+	// LogURI instructs logger to extract request URI (i.e. `/api/v1/users?name=makai`
 	LogURI bool
 	// LogURIPath instructs logger to extract request URI path (i.e. `/api/v1/users`)
 	LogURIPath bool
 	// LogRoutePath bool instructs logger to extract route path part to which request was matched
-	// (i.e. `/api/v1/clients/:clientID`)
+	// (i.e. `/api/v1/users/:userID`)
 	LogRoutePath bool
 	// LogRequestID instructs logger to extract request ID from one of the given parameters.
 	LogRequestIdParams []string
@@ -79,7 +79,6 @@ type RequestLoggerParams struct {
 	ResponseSize  int
 	Headers       map[string][]string
 	QueryParams   map[string][]string
-	Keys          map[string]any
 }
 
 func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
