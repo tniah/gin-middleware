@@ -92,6 +92,8 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 		headers[i] = http.CanonicalHeaderKey(v)
 	}
 
+	logQueryParams := len(cfg.LogQueryParams) > 0
+
 	return func(c *gin.Context) {
 		// Start timer
 		startTime := time.Now()
@@ -154,6 +156,15 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 			for _, header := range headers {
 				if values, ok := c.Request.Header[header]; ok {
 					params.Headers[header] = values
+				}
+			}
+		}
+
+		if logQueryParams {
+			params.QueryParams = map[string][]string{}
+			for _, param := range cfg.LogQueryParams {
+				if values, ok := c.Request.URL.Query()[param]; ok {
+					params.QueryParams[param] = values
 				}
 			}
 		}
