@@ -1,7 +1,9 @@
 package auditlogger
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"time"
 )
 
@@ -71,13 +73,23 @@ type RequestLoggerParams struct {
 	QueryParams   map[string][]string
 }
 
-func LoggerWithConfig(cfg LoggerConfig) gin.HandlerFunc {
+func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 	var skipPaths map[string]bool
 	if length := len(cfg.SkipPaths); length > 0 {
 		skipPaths = make(map[string]bool, length)
 		for _, path := range cfg.SkipPaths {
 			skipPaths[path] = true
 		}
+	}
+
+	if cfg.LogValuesFunc == nil {
+		return nil, errors.New("missing LogValuesFunc callback function for audit logger middleware")
+	}
+
+	logHeaders := len(cfg.LogHeaders) > 0
+	headers := append([]string(nil), cfg.LogHeaders...)
+	for i, v := range headers {
+		headers[i] = http.CanonicalHeaderKey(v)
 	}
 
 	return func(c *gin.Context) {
@@ -137,6 +149,15 @@ func LoggerWithConfig(cfg LoggerConfig) gin.HandlerFunc {
 			params.ResponseSize = c.Writer.Size()
 		}
 
+		if logHeaders {
+			params.Headers = map[string][]string{}
+			for _, header := range headers {
+				if values, ok := c.Request.Header[header]; ok {
+					params.Headers[header] = values
+				}
+			}
+		}
+
 		if cfg.LogLatency {
 			params.Latency = time.Since(startTime)
 		}
@@ -144,5 +165,5 @@ func LoggerWithConfig(cfg LoggerConfig) gin.HandlerFunc {
 		if cfg.LogValuesFunc != nil {
 			cfg.LogValuesFunc(c, params)
 		}
-	}
+	}, nil
 }
