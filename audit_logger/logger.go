@@ -92,7 +92,7 @@ func LoggerWithConfig(cfg LoggerConfig) gin.HandlerFunc {
 			return
 		}
 
-		params := &RequestLoggerParams{StartTime: startTime}
+		params := RequestLoggerParams{StartTime: startTime}
 		if cfg.LogProtocol {
 			params.Protocol = c.Request.Proto
 		}
@@ -139,6 +139,10 @@ func LoggerWithConfig(cfg LoggerConfig) gin.HandlerFunc {
 
 		if cfg.LogLatency {
 			params.Latency = time.Since(startTime)
+		}
+
+		if cfg.LogValuesFunc != nil {
+			cfg.LogValuesFunc(c, params)
 		}
 	}
 }
