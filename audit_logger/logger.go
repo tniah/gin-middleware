@@ -7,16 +7,7 @@ import (
 	"time"
 )
 
-const (
-	HeaderContentLength   = "Content-Length"
-	HeaderContentEncoding = "Content-Encoding"
-	HeaderContentType     = "Content-Type"
-	HeaderXRequestID      = "X-Request-Id"
-	HeaderAuthorization   = "Authorization"
-	HeaderWWWAuthenticate = "WWW-Authenticate"
-	HeaderXForwardedFor   = "X-Forwarded-For"
-	HeaderCookie          = "Cookie"
-)
+const HeaderContentLength = "Content-Length"
 
 type Skipper func(c *gin.Context) bool
 
@@ -88,7 +79,15 @@ type RequestLoggerParams struct {
 	QueryParams   map[string][]string
 }
 
-func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
+func LoggerWithConfig(cfg LoggerConfig) gin.HandlerFunc {
+	mw, err := cfg.ToMiddleware()
+	if err != nil {
+		panic(err)
+	}
+	return mw
+}
+
+func (cfg *LoggerConfig) ToMiddleware() (gin.HandlerFunc, error) {
 	var skipPaths map[string]bool
 	if length := len(cfg.SkipPaths); length > 0 {
 		skipPaths = make(map[string]bool, length)
@@ -212,8 +211,6 @@ func LoggerWithConfig(cfg LoggerConfig) (gin.HandlerFunc, error) {
 			params.Latency = time.Since(startTime)
 		}
 
-		if cfg.LogValuesFunc != nil {
-			cfg.LogValuesFunc(c, params)
-		}
+		cfg.LogValuesFunc(c, params)
 	}, nil
 }
